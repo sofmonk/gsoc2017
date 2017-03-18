@@ -52,20 +52,7 @@ solutions_test = solutions[700000:1000000]
 y_test=solutions_test.as_matrix()
 
 
-tsp=pd.read_csv("tsp_synthetic.csv",header=None)
-gcp=pd.read_csv("gcp_synthetic.csv")
 
-tsp = tsp.as_matrix()
-tsp_data=tsp[:,0:81]
-tsp_sol=tsp[:,81]
-tsp_data = tsp_data.reshape((10, 1, 81, 1))
-tsp_sol=tsp_sol.reshape(10,1)
-
-gcp = gcp.as_matrix()
-gcp_data=gcp[:,0:81]
-gcp_sol=gcp[:,81]
-gcp_data = gcp_data.reshape((10, 1, 81, 1))
-gcp_sol=gcp_sol.reshape(10,1)
 
 # create model
 
@@ -142,100 +129,5 @@ from keras.models import load_model
 
 cnn.save('cnn.h5')
 cnn = load_model('cnn.h5')
-############################################3333
-# # serialize model to JSON
-# cnn_json = cnn.to_json()
-# with open("cnn_08.json", "w") as json_file:
-#     json_file.write(cnn_json)
-# # serialize weights to HDF5
-# cnn.save_weights("cnn_model.h5")
-# print("Saved model to disk")
-#
-# # later...
-#
-# # load json and create model
-# json_file = open('cnn_08.json', 'r')
-# loaded_cnn_json = json_file.read()
-# json_file.close()
-# loaded_cnn = cnn_from_json(loaded_cnn_json)
-# # load weights into new model
-# loaded_cnn.load_weights("cnn_model.h5")
-# print("Loaded model from disk")
 
 
-
-
-#########################################################3
-
-frozen_layer = Dense(32, trainable=False)
-
-
-x = shape=(81,)
-layer = Dense(32)
-layer.trainable = False
-y = layer(x)
-
-frozen_model = cnn(x, y)
-# in the model below, the weights of `layer` will not be updated during training
-frozen_model.compile(optimizer='rmsprop', loss='mse')
-# layer.trainable = True
-# trainable_model = Model(x, y)
-# with this model the weights of the layer will be updated during training
-# (which will also affect the above model since it uses the same layer instance)
-# trainable_model.compile(optimizer='rmsprop', loss='mse')
-
-frozen_model.fit(tsp_data, tsp_sol)  # this does NOT update the weights of `layer`
-# trainable_model.fit(data, labels)  # this updates the weights of `layer`
-
-feature_layers = [
-    Convolution2D(81, 10, 1, input_shape=(1, 81, 1), border_mode='same', activation='relu'),
-    Dropout(0.2),
-    Convolution2D(81, 10, 1, activation='relu', border_mode='same'),
-    MaxPooling2D(pool_size=(1, 1)),
-    Flatten(),
-    Dense(512, activation='relu'),
-    Dropout(0.5),
-    Dense(num_classes, activation='softmax')
-    # Compile cnn
-]
-# cnn=Sequential(
-# Convolution2D(81, 10, 1, input_shape=(1, 81, 1), border_mode='same', activation='relu'),
-#     Dropout(0.2),
-#     Convolution2D(81, 10, 1, activation='relu', border_mode='same'),
-#     MaxPooling2D(pool_size=(1, 1)),
-#     Flatten(),
-#     Dense(512, activation='relu'),
-#     Dropout(0.5),
-#     Dense(81, activation='softmax'))
-
-
-for l in feature_layers:
-    l.trainable = False
-num_classes=10
-cnn.evaluate(tsp_data,tsp_sol)
-
-
-def train_model(model, train, test, num_classes):
-    cnn = Sequential()
-    cnn.add(Convolution2D(81, 10, 1, input_shape=(1, 81, 1), border_mode='same', activation='relu'))
-    cnn.add(Dropout(0.2))
-    cnn.add(Convolution2D(81, 10, 1, activation='relu', border_mode='same'))
-    cnn.add(MaxPooling2D(pool_size=(1, 1)))
-    cnn.add(Flatten())
-    cnn.add(Dense(512, activation='relu'))
-    cnn.add(Dropout(0.5))
-    cnn.add(Dense(num_classes, activation='softmax'))
-    # Compile cnn
-    # epochs = 25
-    # lrate = 0.01
-    # decay = lrate/epochs
-    # sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)
-    # cnn.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-    cnn.compile(loss="mean_squared_error", optimizer="adam", metrics=['accuracy'])
-    print(cnn.summary())
-    cnn.fit(train, test, nb_epoch=20)  # ,  batch_size=500)
-
-    scores = cnn.evaluate(train, test)
-    print(scores[1] * 100)
-train_model(cnn,tsp_data,tsp_sol,1)
-train_model(cnn,gcp_data,gcp_sol,1)
